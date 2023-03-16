@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import useFetch from '../hooks/useFetch';
 
 function Table() {
   const { loading, error, data } = useFetch('https://swapi.dev/api/planets');
+  const [searchValue, setSearchValue] = useState('');
+
+  const filteredPlanets = data.filter((planet) => planet
+    .name.toLowerCase().includes(searchValue.toLowerCase()));
+
   const tableHeads = ['Name', 'Rotation Period', 'Orbital Period', 'Diameter', 'Climate',
     'Gravity', 'Terrain', 'Surface Water', 'Population', 'Films', 'Created',
     'Edited', 'URL'];
@@ -17,7 +23,13 @@ function Table() {
       { loading && <h1>Carregando...</h1> }
       { data.length > 0 && (
         <section>
-          <input type="text" />
+          <input
+            id="search"
+            type="text"
+            value={ searchValue }
+            onChange={ (event) => setSearchValue(event.target.value) }
+            data-testid="name-filter"
+          />
           <table>
             <thead>
               <tr>
@@ -26,7 +38,7 @@ function Table() {
             </thead>
             <tbody>
               {
-                data.map((planet, index) => {
+                filteredPlanets.map((planet, index) => {
                   const tables = [planet.name, planet.rotation_period,
                     planet.orbital_period, planet.diameter, planet.climate,
                     planet.gravity, planet.terrain, planet.surface_water,
