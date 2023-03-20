@@ -2,7 +2,7 @@ import { useState } from 'react';
 import useFetch from '../hooks/useFetch';
 
 function Table() {
-  const { loading, error, data } = useFetch('https://swapi.dev/api/planets');
+  const { loading, data } = useFetch('https://swapi.dev/api/planets');
   const [searchValue, setSearchValue] = useState('');
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [, setRemoveFilter] = useState([]);
@@ -49,28 +49,18 @@ function Table() {
 
     const multipleFilters = singleFilter.filter((element) => {
       const filterPlanet = selectedFilters.map(({ column, comparison, value }) => {
-        switch (comparison) {
-        case 'maior que':
+        if (comparison === 'maior que') {
           return Number(element[column]) > Number(value);
-        case 'menor que':
-          return Number(element[column]) < Number(value);
-        case 'igual a':
-          return Number(element[column]) === Number(value);
-        default:
-          return true;
         }
+        if (comparison === 'menor que') {
+          return Number(element[column]) < Number(value);
+        }
+        return Number(element[column]) === Number(value);
       });
       return filterPlanet.every((result) => result);
     });
     return multipleFilters;
   };
-  if (error) {
-    return (
-      <main>
-        <h1>Um erro inesperado aconteceu</h1>
-      </main>
-    );
-  }
 
   return (
     <main>
@@ -157,6 +147,7 @@ function Table() {
               data-testid="filter"
             >
               <button
+                data-testid="button-remove"
                 onClick={ () => handleDeleteFilter(filter.column) }
               >
                 {filter.column}
