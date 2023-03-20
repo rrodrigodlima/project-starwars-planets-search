@@ -4,43 +4,50 @@ import useFetch from '../hooks/useFetch';
 function Table() {
   const { loading, error, data } = useFetch('https://swapi.dev/api/planets');
   const [searchValue, setSearchValue] = useState('');
+  const [selectedFilters, setSelectedFilters] = useState([]);
   const [numericFilter, setNumericFilter] = useState({
     column: 'population',
     comparison: 'maior que',
     value: 0,
   });
-  const [filter, setFilter] = useState(false);
-
-  // const filteredPlanets = data.filter((planet) => planet
-  //   .name.toLowerCase().includes(searchValue.toLowerCase()));
-
-  const handleFilter = () => {
-    setFilter(true);
-  };
-  const filteredPlanets = data.filter((planet) => {
-    if (!filter) {
-      return true;
-    }
-
-    const planetValue = parseFloat(planet[numericFilter.column]);
-
-    const filterValue = parseFloat(numericFilter.value);
-
-    switch (numericFilter.comparison) {
-    case 'maior que':
-      return planetValue > filterValue;
-    case 'menor que':
-      return planetValue < filterValue;
-    case 'igual a':
-      return planetValue === filterValue;
-    default:
-      return true;
-    }
-  }).filter((planet) => planet.name.toLowerCase().includes(searchValue.toLowerCase()));
+  const [selectOptions, setSelectOptions] = useState([
+    'population',
+    'orbital_period',
+    'diameter',
+    'rotation_period',
+    'surface_water']);
 
   const tableHeads = ['Name', 'Rotation Period', 'Orbital Period', 'Diameter', 'Climate',
     'Gravity', 'Terrain', 'Surface Water', 'Population', 'Films', 'Created',
     'Edited', 'URL'];
+
+  const handleClick = () => {
+    setSelectedFilters([...selectedFilters, numericFilter]);
+    setSelectOptions(selectOptions.filter((option) => option !== numericFilter.column));
+  };
+
+  const createFilters = () => {
+    const singleFilter = data
+      .filter((filtered) => filtered.name.toLowerCase()
+        .includes(searchValue.toLowerCase()));
+
+    const multipleFilters = singleFilter.filter((element) => {
+      const filterPlanet = selectedFilters.map(({ column, comparison, value }) => {
+        switch (comparison) {
+        case 'maior que':
+          return Number(element[column]) > Number(value);
+        case 'menor que':
+          return Number(element[column]) < Number(value);
+        case 'igual a':
+          return Number(element[column]) === Number(value);
+        default:
+          return true;
+        }
+      });
+      return filterPlanet.every((result) => result);
+    });
+    return multipleFilters;
+  };
   if (error) {
     return (
       <main>
@@ -48,6 +55,7 @@ function Table() {
       </main>
     );
   }
+
   return (
     <main>
       { loading && <h1>Carregando...</h1> }
@@ -62,19 +70,21 @@ function Table() {
           />
           <label htmlFor="column-filter">Column:</label>
           <select
-            id="column-filter"
+            data-testid="column-filter"
             value={ numericFilter.column }
             onChange={ (event) => setNumericFilter({
               ...numericFilter,
               column: event.target.value,
             }) }
-            data-testid="column-filter"
           >
-            <option value="population">population</option>
-            <option value="orbital_period">orbital_period</option>
-            <option value="diameter">diameter</option>
-            <option value="rotation_period">rotation_period</option>
-            <option value="surface_water">surface_water</option>
+            {selectOptions.map((column) => (
+              <option
+                key={ column }
+                value={ column }
+              >
+                {column}
+              </option>
+            ))}
           </select>
 
           <label htmlFor="comparison-filter">Comparison:</label>
@@ -96,6 +106,7 @@ function Table() {
           <input
             id="value-filter"
             type="number"
+            name="number"
             value={ numericFilter.value }
             onChange={ (event) => setNumericFilter({
               ...numericFilter,
@@ -103,9 +114,19 @@ function Table() {
             }) }
             data-testid="value-filter"
           />
-          <button onClick={ handleFilter } data-testid="button-filter">
+          <button
+            data-testid="button-filter"
+            onClick={ handleClick }
+          >
             Filter
           </button>
+          {selectedFilters.map((filter, index) => (
+            <div key={ index }>
+              {filter.column}
+              {filter.condition}
+              {filter.value}
+            </div>
+          ))}
           <table>
             <thead>
               <tr>
@@ -114,7 +135,7 @@ function Table() {
             </thead>
             <tbody>
               {
-                filteredPlanets.map((planet, index) => {
+                createFilters().map((planet, index) => {
                   const tables = [planet.name, planet.rotation_period,
                     planet.orbital_period, planet.diameter, planet.climate,
                     planet.gravity, planet.terrain, planet.surface_water,
