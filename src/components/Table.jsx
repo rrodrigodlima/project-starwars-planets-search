@@ -5,11 +5,14 @@ function Table() {
   const { loading, error, data } = useFetch('https://swapi.dev/api/planets');
   const [searchValue, setSearchValue] = useState('');
   const [selectedFilters, setSelectedFilters] = useState([]);
+  const [, setRemoveFilter] = useState([]);
+
   const [numericFilter, setNumericFilter] = useState({
     column: 'population',
     comparison: 'maior que',
     value: 0,
   });
+
   const [selectOptions, setSelectOptions] = useState([
     'population',
     'orbital_period',
@@ -24,6 +27,19 @@ function Table() {
   const handleClick = () => {
     setSelectedFilters([...selectedFilters, numericFilter]);
     setSelectOptions(selectOptions.filter((option) => option !== numericFilter.column));
+    setNumericFilter({
+      column: selectOptions.filter((option) => option !== numericFilter.column)[0],
+      comparison: 'maior que',
+      value: '0',
+    });
+  };
+
+  const handleDeleteFilter = (param) => {
+    setRemoveFilter(param);
+    const filterResult = selectedFilters.filter((element) => element.column !== param);
+    setSelectedFilters(filterResult);
+    setSelectOptions([...selectOptions, param]);
+    console.log(param);
   };
 
   const createFilters = () => {
@@ -120,11 +136,33 @@ function Table() {
           >
             Filter
           </button>
+          <button
+            type="button"
+            data-testid="button-remove-filters"
+            onClick={ () => {
+              setSelectedFilters([]);
+              setSelectOptions([
+                'population',
+                'orbital_period',
+                'diameter',
+                'rotation_period',
+                'surface_water']);
+            } }
+          >
+            Remove Filters
+          </button>
           {selectedFilters.map((filter, index) => (
-            <div key={ index }>
-              {filter.column}
-              {filter.condition}
-              {filter.value}
+            <div
+              key={ index }
+              data-testid="filter"
+            >
+              <button
+                onClick={ () => handleDeleteFilter(filter.column) }
+              >
+                {filter.column}
+                {filter.comparison}
+                {filter.value}
+              </button>
             </div>
           ))}
           <table>
